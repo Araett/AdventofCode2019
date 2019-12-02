@@ -19,7 +19,10 @@ def main():
     data = read_input_and_split_lines()
     s = 0
     for item in data:
-        s += find_fuel_required(int(item))
+        fuel = find_fuel_required(int(item))
+        while fuel > 0:
+            s += fuel
+            fuel = find_fuel_required(fuel)
     print(s)
 
 
