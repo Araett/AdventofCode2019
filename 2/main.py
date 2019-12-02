@@ -16,21 +16,27 @@ def output(opcode, output_pos, data):
 
 
 def main():
-    opcode = [int(x) for x in read_input_and_split_by_comma()]
-    i = 0
-    opcode[1] = 12
-    opcode[2] = 2
-    while opcode[i] != 99:
-        print(opcode[i])
-        res = 0
-        if opcode[i] == 1:
-            res = sum_op(opcode, opcode[i+1], opcode[i+2])
-        elif opcode[i] == 2:
-            res = mul_op(opcode, opcode[i+1], opcode[i+2])
-        output(opcode, opcode[i+3], res)
-        i += 4
-    print(opcode[0])
+    for m in range(0, 100):
+        for j in range(0, 100):
+            opcode = [int(x) for x in read_input_and_split_by_comma()]
+            i = 0
+            opcode[1] = m
+            opcode[2] = j
+            while opcode[i] != 99:
+                # print(opcode[i])
+                res = 0
+                if opcode[i] == 1:
+                    res = sum_op(opcode, opcode[i+1], opcode[i+2])
+                elif opcode[i] == 2:
+                    res = mul_op(opcode, opcode[i+1], opcode[i+2])
+                else:
+                    break
+                output(opcode, opcode[i+3], res)
+                i += 4
+            print(opcode[0])
+            if opcode[0] == 19690720:
+                return f"{opcode[1]} {opcode[2]}"
 
 
 if __name__ == '__main__':
-    main()
+    print(main())
