@@ -1,4 +1,7 @@
 from operator import itemgetter
+from pynput.keyboard import Key, Listener
+import sys
+import time
 
 
 class IntComputer:
@@ -139,8 +142,20 @@ class IntComputer:
 class ArcadeCabinet:
 
     def __init__(self):
+        self.loading = None
         self.grid = {}
         self.central = IntComputer()
+        intab = '01234'
+        outtab = '.+#_o'
+        self.trantab = str.maketrans(intab, outtab)
+        self.current_input = 1
+        self.frames_per_second = 60
+        self.score = 0
+        self.ball_present = False
+        self.pad_present = False
+
+    def give_current_input(self):
+        return self.current_input
 
     def get_instructions(self, count):
         output = []
@@ -160,24 +175,78 @@ class ArcadeCabinet:
         max_x = max(used_coordinates, key=itemgetter(0))[0]
         min_y = min(used_coordinates, key=itemgetter(1))[1]
         max_y = max(used_coordinates, key=itemgetter(1))[1]
-        for y in range(max_y, min_y - 1, -1):
+        for y in range(min_y, max_y + 1):
             x_str = ""
-            for x in range(min_x, max_x):
+            for x in range(min_x, max_x + 1):
                 x_str += str(self.grid.get((x, y), '.'))
+            print(x_str.translate(self.trantab))
 
-    def draw_objects(self):
+    def load(self):
+        while True:
+            draw_inst = self.get_instructions(3)
+            if draw_inst[0] == -1:
+                return
+            self.put_object(*draw_inst)
+
+    def render_screen(self):
         while True:
             draw_inst = self.get_instructions(3)
             if draw_inst is None:
-                break
+                return
+            elif draw_inst[0] == -1 and draw_inst[1] == 0:
+                self.score = draw_inst[2]
+                print(draw_inst)
             self.put_object(*draw_inst)
-        print(self.grid)
-        print(list(self.grid.values()).count(2))
+            if draw_inst[2] == 4:
+                break
+            # if self.ball_and_pad_present():
+            #     print('break')
+            #     break
+        print('\033c')
+        self.draw_grid()
+
+    def blocks_exist(self):
+        return list(self.grid.values()).count(2) > 0
+
+    def ball_and_pad_present(self):
+        ball = list(self.grid.values()).count(3)
+        pad = list(self.grid.values()).count(4)
+        # print(ball, pad)
+        return ball & pad
+
+    def determine_input(self):
+        if self.ball_and_pad_present():
+            ball_x = list(self.grid.keys())[list(self.grid.values()).index(4)][0]
+            pad_x = list(self.grid.keys())[list(self.grid.values()).index(3)][0]
+            joy_input = 0
+            if ball_x > pad_x:
+                joy_input = 1
+            if ball_x < pad_x:
+                joy_input = -1
+            if len(self.central.inputs) == 0:
+                self.central.signal_input(joy_input)
+
+    def play_game(self):
+        self.central.opcode[0] = 2
+        self.load()
+        self.draw_grid()
+        self.central.signal_input(1)
+        while True:
+            time.sleep(1 / self.frames_per_second)
+            if self.blocks_exist():
+                self.render_screen()
+                self.determine_input()
+
+            else:
+                print(self.score)
 
 
 def main():
     arcade = ArcadeCabinet()
-    arcade.draw_objects()
+    print(arcade.play_game())
+
+
+
 
 
 if __name__ == '__main__':
